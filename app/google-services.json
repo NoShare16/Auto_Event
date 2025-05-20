@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959606704803",
+    "project_id": "auto-event-4ccaf",
+    "storage_bucket": "auto-event-4ccaf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959606704803:android:26017ce012b337075b8d16",
+        "android_client_info": {
+          "package_name": "com.example.autoevent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2ii2827uoXE3N3YEUcpsDa6ObTGrLmds"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
