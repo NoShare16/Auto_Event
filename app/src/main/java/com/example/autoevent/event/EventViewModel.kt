@@ -11,9 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class EventViewModel(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth     = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
+    /* -------------------- Live-Feed -------------------- */
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events.asStateFlow()
 
@@ -23,15 +24,35 @@ class EventViewModel(
         db.collection("events")
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, _ ->
-                if (snap != null) {
-                    _events.value = snap.toObjects(Event::class.java)
-                }
+                if (snap != null) _events.value = snap.toObjects(Event::class.java)
             }
     }
 
-    fun addEvent(ev: String, trim: String, timestamp: Timestamp, trim1: String) {
-        db.collection("events")
-            .add(ev)
-    }
+    /* -------------------- Neues Event -------------------- */
+    fun addEvent(
+        title: String,
+        location: String,
+        eventDate: Timestamp,
+        description: String
+    ) {
+        val user = auth.currentUser ?: return         // sollte nicht null sein
 
+        val ev = Event(
+            creatorId      = user.uid,
+            authorName     = user.displayName ?: user.email ?: "Unbekannt",
+            authorPhotoUrl = user.photoUrl?.toString() ?: "",
+
+            /* Pflichtfelder */
+            title       = title,
+            location    = location,
+            eventDate   = eventDate,
+
+            /* Optional */
+            description = description,
+
+            createdAt   = Timestamp.now()
+        )
+
+        db.collection("events").add(ev)               // ganzes Objekt hochladen
+    }
 }

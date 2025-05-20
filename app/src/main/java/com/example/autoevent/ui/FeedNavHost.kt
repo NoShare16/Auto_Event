@@ -21,7 +21,7 @@ fun FeedNavHost(
         composable("feed") {
             FeedScreen(
                 onCreateEvent   = { nav.navigate("create") },
-                externalPadding = pad,
+
                 onUserClick     = { uid -> nav.navigate("profile/$uid") }   // Avatar-Tap
             )
         }

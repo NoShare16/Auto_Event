@@ -14,6 +14,8 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,16 +86,26 @@ fun CreateEventScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            /* ---------- DATUM ---------- */
             OutlinedTextField(
                 value = dateText,
                 onValueChange = {},
                 label = { Text("Datum*") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showPicker = true },
+                    .clickable { showPicker = true },   // gesamtes Feld tappbar
                 readOnly = true,
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {                       // Icon-Button zusätzlich
+                    IconButton(onClick = { showPicker = true }) {
+                        Icon(
+                            Icons.Default.DateRange,   // Material-Icon
+                            contentDescription = "Datum wählen"
+                        )
+                    }
+                }
             )
+
 
             /* ----------- Optional ----------- */
             OutlinedTextField(
