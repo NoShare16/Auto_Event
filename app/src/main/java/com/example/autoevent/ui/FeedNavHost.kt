@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 
 @Composable
 fun FeedNavHost(
@@ -19,8 +20,9 @@ fun FeedNavHost(
         /* ---------- Feed ---------- */
         composable("feed") {
             FeedScreen(
-                onCreateEvent  = { nav.navigate("create") },
-                externalPadding = pad
+                onCreateEvent   = { nav.navigate("create") },
+                externalPadding = pad,
+                onUserClick     = { uid -> nav.navigate("profile/$uid") }   // Avatar-Tap
             )
         }
 
@@ -29,10 +31,10 @@ fun FeedNavHost(
             CreateEventScreen(onSaveDone = { nav.popBackStack() })
         }
 
-        /* ---------- Profil ---------- */
+        /* ---------- Eigenes Profil ---------- */
         composable("profile") {
             ProfileScreen(
-                onEdit   = { nav.navigate("editProfile") },   // ← NEU
+                onEdit   = { nav.navigate("editProfile") },
                 onLogout = onLogout
             )
         }
@@ -40,6 +42,18 @@ fun FeedNavHost(
         /* ---------- Profil bearbeiten ---------- */
         composable("editProfile") {
             EditProfileScreen(onDone = { nav.popBackStack() })
+        }
+
+        /* ---------- Fremdes Profil ---------- */
+        composable(
+            route = "profile/{uid}",
+            arguments = listOf(navArgument("uid") { defaultValue = "" })
+        ) { back ->
+            val uid = back.arguments?.getString("uid") ?: return@composable
+            OtherProfileScreen(
+                targetUid = uid,
+                onBack    = { nav.popBackStack() }
+            )
         }
     }
 }

@@ -69,8 +69,9 @@ fun ProfileScreen(
                 }
             } else {
                 items(myEvents) { ev ->
-                    EventCard(ev)
+                    EventCard(ev, onUserClick = { /* bereits im eigenen Profil */ })
                 }
+
             }
         }
     }

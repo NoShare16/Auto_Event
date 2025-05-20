@@ -10,14 +10,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.autoevent.R               // ← für R.drawable.*
+import com.example.autoevent.R
 import com.example.autoevent.profile.User
 
 @Composable
 fun ProfileHeader(
     user: User,
     postCount: Int,
-    onEdit: () -> Unit
+    onEdit: (() -> Unit)? = null          //  ← Callback ist jetzt optional
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -27,7 +27,7 @@ fun ProfileHeader(
     ) {
         /* ---------- Avatar ---------- */
         AsyncImage(
-            model = user.photoUrl.ifBlank { null },       // leere URL ⇒ null
+            model = user.photoUrl.ifBlank { null },
             placeholder = painterResource(R.drawable.ic_avatar_placeholder),
             error       = painterResource(R.drawable.ic_avatar_placeholder),
             contentDescription = null,
@@ -55,10 +55,11 @@ fun ProfileHeader(
             Stat("Folgt",    user.following)
         }
 
-        Spacer(Modifier.height(8.dp))
-
         /* ---------- Bearbeiten-Button ---------- */
-        OutlinedButton(onClick = onEdit) { Text("Bearbeiten") }
+        onEdit?.let {
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = it) { Text("Bearbeiten") }
+        }
     }
 }
 
@@ -66,6 +67,6 @@ fun ProfileHeader(
 private fun Stat(label: String, value: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value.toString(), style = MaterialTheme.typography.bodyLarge)
-        Text(label,           style = MaterialTheme.typography.labelSmall)
+        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }

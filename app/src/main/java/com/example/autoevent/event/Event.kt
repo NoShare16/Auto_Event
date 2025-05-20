@@ -8,5 +8,7 @@ data class Event(
     val title: String = "",
     val description: String = "",
     val createdAt: Timestamp = Timestamp.now(),
-    val creatorId: String = ""
+    val creatorId: String = "",
+    val authorName: String       = "",
+    val authorPhotoUrl: String   = "",
 )
