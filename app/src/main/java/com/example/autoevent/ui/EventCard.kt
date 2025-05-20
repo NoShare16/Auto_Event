@@ -16,14 +16,15 @@ import com.example.autoevent.event.Event
 
 @Composable
 fun EventCard(
+    modifier: Modifier = Modifier,
     ev: Event,
-    onUserClick: (String) -> Unit,          // ← NEU
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
+    onUserClick: (String) -> Unit = {},      //  ← default = leeres Lambda
+)
+ {
+    Card(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp)) {
 
-            /* ---------- Header: Avatar + Autor ---------- */
+            /* ---------- Avatar + Autor ---------- */
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -43,17 +44,23 @@ fun EventCard(
                 Text(ev.authorName, style = MaterialTheme.typography.bodyMedium)
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            /* ---------- Inhalt ---------- */
-            Text(ev.title,        style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text(ev.description,  style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(6.dp))
+
+            /* ---------- Titel, Ort, Datum ---------- */
+            Text(ev.title, style = MaterialTheme.typography.titleMedium)
+
             Text(
-                ev.createdAt.toDate().toString(),
-                style = MaterialTheme.typography.labelSmall
+                text = "${ev.location} • " +
+                        java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault())
+                            .format(ev.eventDate.toDate()),
+                style = MaterialTheme.typography.labelMedium
             )
+
+            /* ---------- Beschreibung (optional) ---------- */
+            ev.description.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

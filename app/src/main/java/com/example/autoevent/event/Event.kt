@@ -1,14 +1,21 @@
 package com.example.autoevent.event
 
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentId
 
 data class Event(
-    @DocumentId val id: String = "",
-    val title: String = "",
+    val id: String          = "",            // Firestore-Doc-ID
+    val creatorId: String   = "",            // für Filter / Profile
+    val authorName: String  = "",
+    val authorPhotoUrl: String = "",
+
+    /* -------- Pflichtfelder -------- */
+    val title: String       = "",
+    val eventDate: Timestamp = Timestamp.now(),
+    val location: String    = "",
+
+    /* -------- Optional -------- */
     val description: String = "",
-    val createdAt: Timestamp = Timestamp.now(),
-    val creatorId: String = "",
-    val authorName: String       = "",
-    val authorPhotoUrl: String   = "",
+
+    /* Admin / Sortierung */
+    val createdAt: Timestamp = Timestamp.now()
 )

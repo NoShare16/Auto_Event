@@ -19,35 +19,60 @@ import coil.compose.AsyncImage
 import com.example.autoevent.R
 import com.example.autoevent.event.Event
 import com.example.autoevent.event.EventViewModel
+import com.example.autoevent.follow.FollowingViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.collectAsState
 
 /* ------------------------------------------------------------------ */
-/* ---------------------------- FEED -------------------------------- */
+/* ---------------------------- FEED TABS --------------------------- */
 /* ------------------------------------------------------------------ */
 
 @Composable
 fun FeedScreen(
     onCreateEvent: () -> Unit,
     externalPadding: PaddingValues = PaddingValues(),
-    onUserClick: (String) -> Unit = {},           // Avatar-/Name-Tap
-    eventVM: EventViewModel = viewModel()
+    onUserClick: (String) -> Unit = {},
+    eventVM: EventViewModel = viewModel(),
+    followVM: FollowingViewModel = viewModel()          //  ←  NEU
 ) {
-    val events by eventVM.events.collectAsState()
-    val myUid  = FirebaseAuth.getInstance().currentUser?.uid
+    val allEvents   by eventVM.events.collectAsState()
+    val following   by followVM.followingIds.collectAsState()
 
-    // Eigene Posts im Feed ausblenden
-    val feed = remember(events, myUid) {
-        events.filter { it.creatorId != myUid }
+    val myUid = FirebaseAuth.getInstance().currentUser?.uid
+
+    /* ---------- Zwei Feed-Varianten ---------- */
+    val feedAll = remember(allEvents, myUid) {
+        allEvents.filter { it.creatorId != myUid }          // eigene raus
+    }
+    val feedFollowing = remember(allEvents, following) {
+        allEvents.filter { it.creatorId in following }
     }
 
+    /* ---------- Tab-State ---------- */
+    var selTab by remember { mutableIntStateOf(0) }
+    val tabLabels = listOf("Alle", "Folge ich")
+
     Scaffold(
+        topBar = {
+            TabRow(selectedTabIndex = selTab) {
+                tabLabels.forEachIndexed { idx, txt ->
+                    Tab(
+                        selected  = selTab == idx,
+                        onClick   = { selTab = idx },
+                        text      = { Text(txt) }
+                    )
+                }
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onCreateEvent) {
                 Icon(Icons.Default.Add, contentDescription = null)
             }
         }
     ) { inner ->
+
+        val currentFeed = if (selTab == 0) feedAll else feedFollowing
+
         LazyColumn(
             contentPadding      = inner,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -55,7 +80,23 @@ fun FeedScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            items(feed) { ev -> EventCard(ev, onUserClick) }
+            if (currentFeed.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            if (selTab == 0) "Noch keine Posts"
+                            else "Noch keine Posts von Accounts, denen du folgst"
+                        )
+                    }
+                }
+            } else {
+                items(currentFeed) { ev -> EventCard(ev, onUserClick) }
+            }
         }
     }
 }
@@ -72,7 +113,7 @@ fun EventCard(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
 
-            /* ---------- Avatar + Autor ---------- */
+            /* Avatar + Autor */
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -94,7 +135,7 @@ fun EventCard(
 
             Spacer(Modifier.height(6.dp))
 
-            /* ---------- Titel + Beschreibung ---------- */
+            /* Inhalt */
             Text(event.title, style = MaterialTheme.typography.titleMedium)
             event.description.takeIf { it.isNotBlank() }?.let {
                 Spacer(Modifier.height(4.dp))
