@@ -1,7 +1,12 @@
 package com.example.autoevent.ui
 
+import com.example.autoevent.util.rememberPlacesLauncher
+import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,12 +15,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.autoevent.event.EventViewModel
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,17 +27,24 @@ fun CreateEventScreen(
     onSaveDone: () -> Unit,
     eventVM: EventViewModel = viewModel()
 ) {
-    /* ---------- Formular-States ---------- */
+    /* ---------- UI-State ---------- */
     var title       by remember { mutableStateOf("") }
-    var location    by remember { mutableStateOf("") }
+    var address     by remember { mutableStateOf("") }
+    var latLng      by remember { mutableStateOf<LatLng?>(null) }
     var description by remember { mutableStateOf("") }
-    var millis      by remember { mutableStateOf<Long?>(null) }
+    var dateMillis  by remember { mutableStateOf<Long?>(null) }
 
-    val scope = rememberCoroutineScope()
-    val ctx   = LocalContext.current
-    val dateFormatter = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
+    val ctx     = LocalContext.current
+    val scope   = rememberCoroutineScope()
+    val dateFmt = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
 
-    /* ---------- DatePickerDialog (Compose) ---------- */
+    /* ---------- Places-Launcher aus Helper ---------- */
+    val launchPlaces = rememberPlacesLauncher { place ->
+        address = place.address ?: place.name.orEmpty()
+        latLng  = place.latLng
+    }
+
+    /* ---------- DatePicker ---------- */
     var showPicker by remember { mutableStateOf(false) }
     val dateState  = rememberDatePickerState()
 
@@ -43,33 +54,31 @@ fun CreateEventScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        millis = dateState.selectedDateMillis
+                        dateMillis = dateState.selectedDateMillis
                         showPicker = false
                     },
                     enabled = dateState.selectedDateMillis != null
                 ) { Text("OK") }
             },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Abbrechen") }
-            }
-        ) {
-            DatePicker(state = dateState)
-        }
+            dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Abbrechen") } }
+        ) { DatePicker(state = dateState) }
     }
 
-    val dateText = millis?.let { dateFormatter.format(Date(it)) } ?: ""
-    val allValid = title.isNotBlank() && location.isNotBlank() && millis != null
+    /* ---------- Ableitungen & Validierung ---------- */
+    val dateText = dateMillis?.let { dateFmt.format(Date(it)) } ?: ""
+    val allValid = title.isNotBlank() && address.isNotBlank() && dateMillis != null
 
+    /* ---------- UI ---------- */
     Scaffold { pad ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(pad)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            /* ----------- Pflichtfelder ----------- */
+            /* ------ Titel ------ */
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -78,36 +87,41 @@ fun CreateEventScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            /* ------ Adresse (Places) ------ */
             OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Ort*") },
+                value = address,
+                onValueChange = {},      // read-only
+                label = { Text("Adresse*") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = launchPlaces) {
+                        Icon(Icons.Default.Place, contentDescription = "Adresse wählen")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { launchPlaces() }
             )
 
-            /* ---------- DATUM ---------- */
+            /* ------ Datum ------ */
             OutlinedTextField(
                 value = dateText,
                 onValueChange = {},
                 label = { Text("Datum*") },
+                singleLine = true,
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showPicker = true }) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Datum wählen")
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showPicker = true },   // gesamtes Feld tappbar
-                readOnly = true,
-                singleLine = true,
-                trailingIcon = {                       // Icon-Button zusätzlich
-                    IconButton(onClick = { showPicker = true }) {
-                        Icon(
-                            Icons.Default.DateRange,   // Material-Icon
-                            contentDescription = "Datum wählen"
-                        )
-                    }
-                }
+                    .clickable { showPicker = true }
             )
 
-
-            /* ----------- Optional ----------- */
+            /* ------ Beschreibung (optional) ------ */
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
@@ -117,23 +131,24 @@ fun CreateEventScreen(
 
             Spacer(Modifier.height(8.dp))
 
+            /* ------ Speichern ------ */
             Button(
+                enabled = allValid,
                 onClick = {
                     scope.launch {
                         eventVM.addEvent(
                             title.trim(),
-                            location.trim(),
-                            Timestamp(Date(millis!!)),
+                            address.trim(),               // fürs MVP nur die Adresse
+                            Timestamp(Date(dateMillis!!)),
                             description.trim()
                         )
                         onSaveDone()
                     }
-                },
-                enabled = allValid
+                }
             ) { Text("Speichern") }
 
             Text(
-                "* Pflichtfeld – Button aktiviert sich erst, wenn alle Pflichtfelder ausgefüllt sind",
+                "* Pflichtfeld – Button wird erst aktiv, wenn alle Pflichtfelder ausgefüllt sind",
                 style = MaterialTheme.typography.labelSmall
             )
         }

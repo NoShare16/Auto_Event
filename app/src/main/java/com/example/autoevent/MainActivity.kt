@@ -1,4 +1,4 @@
-package com.example.autoevent          // ggf. an dein applicationId anpassen
+package com.example.autoevent   // ggf. an dein applicationId anpassen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,30 +11,52 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.autoevent.auth.AuthFlow
 import com.example.autoevent.ui.HomeScaffold
+import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { AutoEventApp() }
+
+        /* ────────────────────────────────────────────────
+         *  Google Places SDK einmalig initialisieren
+         *  (liest denselben API-Key wie Maps aus dem Manifest)
+         * ──────────────────────────────────────────────── */
+        if (!Places.isInitialized()) {
+            // Wenn du das Secrets-Plugin verwendest, kannst du
+            // auch BuildConfig.MAPS_API_KEY nehmen.
+            Places.initialize(
+                applicationContext,
+                getString(R.string.google_maps_key)
+            )
+        }
+
+        /* ─────────────────────────────
+         *  Compose-UI starten
+         * ───────────────────────────── */
+        setContent { AutoEventRoot() }
     }
 }
 
-/* ---------- App-Theme + Root-Navigation ---------- */
+/* ---------- Theme-Wrapper + Root-Nav ---------- */
 
 @Composable
-private fun AutoEventApp() {
+private fun AutoEventRoot() {
     MaterialTheme {
         val rootNav = rememberNavController()
-        RootNavHost(rootNav)
+        RootNavGraph(rootNav)
     }
 }
 
-/* ---------- Graph: auth  ↔  home ---------- */
+/* ---------- Graph:  auth  ↔  home ---------- */
 
 @Composable
-private fun RootNavHost(rootNav: NavHostController) {
-    NavHost(rootNav, startDestination = "auth") {
+private fun RootNavGraph(rootNav: NavHostController) {
 
+    NavHost(
+        navController   = rootNav,
+        startDestination = "auth"
+    ) {
         /* -------- Auth -------- */
         composable("auth") {
             AuthFlow(
@@ -46,13 +68,13 @@ private fun RootNavHost(rootNav: NavHostController) {
             )
         }
 
-        /* -------- Home (Feed | Profile) -------- */
+        /* -------- Home  (Feed | Profil) -------- */
         composable("home") {
-            val homeNav = rememberNavController()         // eigener Controller für Tabs
+            val homeNav = rememberNavController()   // eigener Controller für Tabs
 
             HomeScaffold(
-                nav       = homeNav,                      //  ← jetzt übergeben
-                onLogout  = {
+                nav      = homeNav,
+                onLogout = {
                     rootNav.navigate("auth") {
                         popUpTo("home") { inclusive = true }
                     }

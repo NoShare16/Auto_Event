@@ -73,6 +73,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")   // Bild-Picker
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.1")
-
-
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.android.libraries.places:places:3.4.0")
+    implementation ("androidx.appcompat:appcompat:1.6.1")
 }
