@@ -15,6 +15,7 @@ data class Event(
 
     /* -------- Optional -------- */
     val description: String = "",
+    val imageUrl: String = "",
 
     /* Admin / Sortierung */
     val createdAt: Timestamp = Timestamp.now()
